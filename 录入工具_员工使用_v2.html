@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>展会客户录入</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;min-height:100vh;padding-bottom:40px}
+.header{background:#1a1a1a;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.header-title{font-size:16px;font-weight:700;flex:1}
+.header-step{font-size:12px;color:#999}
+.container{max-width:560px;margin:0 auto;padding:16px}
+
+/* Config banner */
+.config-banner{background:#fff8e6;border:1px solid #f0c040;border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.6;color:#7a5800}
+.config-banner strong{display:block;margin-bottom:6px;font-size:14px}
+.config-banner input{width:100%;margin-top:8px;padding:9px 11px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#1a1a1a}
+.config-save{margin-top:8px;padding:9px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+
+.step-bar{display:flex;gap:4px;margin-bottom:20px}
+.sdot{flex:1;height:3px;border-radius:2px;background:#ddd;transition:background 0.3s}
+.sdot.done{background:#1D9E75}.sdot.active{background:#1a1a1a}
+
+.section-label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #e8e8e8}
+.field{margin-bottom:14px}.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:13px;color:#555;margin-bottom:5px;font-weight:500}
+.req{color:#E24B4A;font-size:10px;margin-left:3px}
+.field input,.field textarea,.field select{width:100%;font-size:15px;padding:10px 12px;border:1px solid #e0e0e0;border-radius:8px;background:#fff;color:#1a1a1a;font-family:inherit;-webkit-appearance:none}
+.field textarea{min-height:80px;resize:vertical;line-height:1.5}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:#1a1a1a}
+.hint{font-size:11px;color:#999;margin-top:4px;line-height:1.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Media */
+.media-zone{background:#fafafa;border:1px dashed #ccc;border-radius:10px;padding:14px}
+.media-btns{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.mbtn{display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:600;padding:13px;border-radius:9px;cursor:pointer;font-family:inherit;width:100%;border:1px solid #e0e0e0;background:#fff;color:#1a1a1a}
+.mbtn.cam{background:#1a1a1a;color:#fff;border-color:#1a1a1a;font-size:15px}
+.mbtn:active{opacity:0.8}
+.mbtn-row{display:flex;gap:8px}
+.mbtn-row .mbtn{flex:1}
+.media-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+.thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid #e0e0e0;background:#f0f0f0}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .vid-ph{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:#888}
+.thumb .del{position:absolute;top:3px;right:3px;width:22px;height:22px;background:rgba(0,0,0,0.6);border:none;border-radius:50%;color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.media-note{font-size:11px;color:#999;text-align:center}
+
+/* Checklist */
+.cl-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #eee;border-radius:8px;background:#fff;margin-bottom:8px}
+.cl-item.ok{background:#f0faf6;border-color:#b0e0cc}
+.cl-item.ok .cl-text{color:#999;text-decoration:line-through}
+.cl-circle{width:22px;height:22px;border-radius:50%;border:1.5px solid #ccc;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:transparent;transition:all 0.2s}
+.cl-circle.ok{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.cl-text{font-size:14px;flex:1}
+.cl-req{font-size:10px;color:#E24B4A;background:#fef0f0;padding:2px 7px;border-radius:4px}
+
+/* Nav */
+.nav{display:flex;gap:8px;margin-top:12px}
+.btn-prev{flex:1;padding:13px;font-size:15px;border:1px solid #ccc;border-radius:10px;background:#fff;color:#1a1a1a;cursor:pointer;font-family:inherit;font-weight:500}
+.btn-next{flex:2;padding:13px;font-size:15px;font-weight:700;background:#1a1a1a;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit}
+.btn-next:active,.btn-prev:active{opacity:0.85}
+.btn-submit{width:100%;padding:15px;font-size:16px;font-weight:700;background:#1D9E75;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;margin-top:10px}
+.btn-submit:disabled{background:#ccc;cursor:not-allowed}
+.btn-submit:active:not(:disabled){opacity:0.85}
+
+/* Uploading state */
+.upload-status{margin-top:10px;padding:12px;background:#f0faf6;border-radius:8px;font-size:13px;color:#0F6E56;text-align:center;display:none}
+.upload-status.error{background:#fef0f0;color:#c0392b}
+
+/* Success */
+.success-screen{display:none;text-align:center;padding:60px 20px}
+.success-screen.show{display:block}
+.success-icon{font-size:60px;margin-bottom:16px}
+.success-title{font-size:22px;font-weight:700;margin-bottom:8px}
+.success-sub{font-size:14px;color:#888;margin-bottom:28px;line-height:1.6}
+.btn-new{padding:13px 32px;font-size:15px;font-weight:700;background:#1a1a1a;color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;opacity:0;transition:opacity 0.25s;pointer-events:none;white-space:nowrap;z-index:999}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-title">展会客户录入</div>
+  <div class="header-step" id="hstep">第 1 步，共 4 步</div>
+</div>
+
+<div class="container">
+
+  <!-- Config -->
+  <div class="config-banner" id="configBanner">
+    <strong>⚙️ 首次使用：填入 Google Sheets 网址</strong>
+    请让负责人把共享表格链接粘贴到这里，之后员工不需要再设置。
+    <input id="sheetUrl" type="url" placeholder="https://script.google.com/macros/s/...">
+    <br>
+    <button class="config-save" onclick="saveConfig()">保存并开始录入</button>
+  </div>
+
+  <!-- Step 0 -->
+  <div id="step0" style="display:none">
+    <div class="step-bar" id="stepBar0"></div>
+    <div class="section-label">基本信息</div>
+    <div class="card">
+      <div class="field"><label>公司名称 <span class="req">必填</span></label><input id="f-company" type="text" placeholder="公司全称" autocomplete="off"></div>
+      <div class="grid2">
+        <div class="field"><label>联系人姓名</label><input id="f-name" type="text" placeholder="姓名"></div>
+        <div class="field"><label>职位</label><input id="f-job" type="text" placeholder="采购总监"></div>
+      </div>
+      <div class="field"><label>市场所在地 <span class="req">必填</span></label>
+        <select id="f-market">
+          <option value="">请选择市场</option>
+          <option>美国</option><option>欧洲（德国）</option><option>欧洲（法国）</option><option>欧洲（意大利）</option><option>英国</option><option>日本</option><option>韩国</option><option>中东</option><option>东南亚</option><option>澳大利亚</option><option>其他</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>采购能力 / 公司规模</label>
+        <textarea id="f-scale" placeholder="门店数量、社媒粉丝数、年采购额、主要渠道..."></textarea>
+      </div>
+    </div>
+    <div class="nav"><button class="btn-next" onclick="go(1)">下一步：选款 & 打样 →</button></div>
+  </div>
+
+  <!-- Step 1: 选款 + 款式图片 -->
+  <div id="step1" style="display:none">
+    <div class="step-bar" id="stepBar1"></div>
+    <div class="section-label">选款 & 打样需求</div>
+    <div class="card">
+      <div class="field">
+        <label>感兴趣的款 / 大底分类 <span class="req">必填</span></label>
+        <textarea id="f-cats" placeholder="例：橡胶大底-运动系列（A01、A03），EVA大底-休闲系列（B07）" style="min-height:90px"></textarea>
+        <div class="hint">按大底分类记录，可同时写款号</div>
+      </div>
+      <div class="field"><label>打样要求</label><textarea id="f-sample" placeholder="颜色、尺码段、材质、LOGO定制..."></textarea></div>
+      <div class="grid2">
+        <div class="field"><label>预计下单量</label><input id="f-qty" type="text" placeholder="如：3000双/季度"></div>
+        <div class="field"><label>决策周期</label>
+          <select id="f-timeline"><option value="">请选择</option><option>1个月内</option><option>1–3个月</option><option>3–6个月</option><option>半年以上</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">款式 & 样品照片</div>
+    <div class="card">
+      <div class="media-zone">
+        <div class="media-btns">
+          <button class="mbtn cam" onclick="document.getElementById('cam-style').click()">📷 拍摄样品 / 款式</button>
+          <div class="mbtn-row">
+            <button class="mbtn" onclick="document.getElementById('lib-style').click()">🖼 从相册选择</button>
+            <button class="mbtn" onclick="document.getElementById('vid-style').click()">🎥 录制视频</button>
+          </div>
+        </div>
+        <input id="cam-style" type="file" accept="image/*" capture="environment" style="display:none" onchange="addMedia(this,'style')">
+        <input id="lib-style" type="file" accept="image/*" multiple style="display:none" onchange="addMedia(this,'style')">
+        <input id="vid-style" type="file" accept="video/*" capture="environment" style="display:none" onchange="addMedia(this,'style')">
+        <div class="media-grid" id="grid-style"></div>
+        <div class="media-note">样品照、款式细节、面料材质等</div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn-prev" onclick="go(0)">← 返回</button>
+      <button class="btn-next" onclick="go(2)">下一步：联系方式 →</button>
+    </div>
+  </div>
+
+  <!-- Step 2: 联系方式 + 合照 -->
+  <div id="step2" style="display:none">
+    <div class="step-bar" id="stepBar2"></div>
+    <div class="section-label">联系方式 & 需求</div>
+    <div class="card">
+      <div class="field"><label>邮件地址 <span class="req">必填</span></label><input id="f-email" type="email" placeholder="email@company.com" autocapitalize="none"></div>
+      <div class="grid2">
+        <div class="field"><label>WhatsApp / 电话</label><input id="f-phone" type="tel" placeholder="+1 ..."></div>
+        <div class="field"><label>Instagram / 社媒</label><input id="f-social" type="text" placeholder="@账号"></div>
+      </div>
+      <div class="field"><label>客户痛点 & 核心需求</label><textarea id="f-pain" placeholder="对方提到的痛点、与现有供应商差异、特别关注点..."></textarea></div>
+    </div>
+
+    <div class="section-label">客户合照 <span style="color:#E24B4A;font-size:11px">必拍</span></div>
+    <div class="card">
+      <div class="media-zone">
+        <div class="media-btns">
+          <button class="mbtn cam" onclick="document.getElementById('cam-portrait').click()">📷 立即拍摄合照</button>
+          <button class="mbtn" onclick="document.getElementById('lib-portrait').click()">🖼 从相册选择</button>
+        </div>
+        <input id="cam-portrait" type="file" accept="image/*" capture="user" style="display:none" onchange="addMedia(this,'portrait')">
+        <input id="lib-portrait" type="file" accept="image/*" multiple style="display:none" onchange="addMedia(this,'portrait')">
+        <div class="media-grid" id="grid-portrait"></div>
+        <div class="media-note">与客户的合影，用于档案识别</div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="btn-prev" onclick="go(1)">← 返回</button>
+      <button class="btn-next" onclick="go(3)">下一步：检查 & 提交 →</button>
+    </div>
+  </div>
+
+  <!-- Step 3: 检查 + 提交 -->
+  <div id="step3" style="display:none">
+    <div class="step-bar" id="stepBar3"></div>
+    <div class="section-label">提交前检查</div>
+    <div id="checklist"></div>
+
+    <div class="card">
+      <div class="field"><label>备注</label><textarea id="f-note" placeholder="其他补充..."></textarea></div>
+    </div>
+
+    <div class="upload-status" id="uploadStatus"></div>
+    <div class="nav"><button class="btn-prev" onclick="go(2)">← 返回</button></div>
+    <button class="btn-submit" id="submitBtn" onclick="submitForm()">✓ 提交并自动同步到汇总</button>
+  </div>
+
+  <!-- Success -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">已自动同步</div>
+    <div class="success-sub">客户信息已实时写入共享表格<br>负责人可以直接在汇总页看到这条记录</div>
+    <button class="btn-new" onclick="resetAll()">继续录入下一位客户</button>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+var SHEET_URL_KEY = 'tradeshow_sheet_url';
+var mediaStyle = [];
+var mediaPortrait = [];
+var currentStep = 0;
+
+function saveConfig() {
+  var url = document.getElementById('sheetUrl').value.trim();
+  if (!url || !url.startsWith('http')) { showToast('请填入正确的链接'); return; }
+  localStorage.setItem(SHEET_URL_KEY, url);
+  document.getElementById('configBanner').style.display = 'none';
+  showStep(0);
+  showToast('配置已保存');
+}
+
+function init() {
+  var url = localStorage.getItem(SHEET_URL_KEY);
+  if (url) {
+    document.getElementById('configBanner').style.display = 'none';
+    showStep(0);
+  }
+}
+
+function renderBar(stepEl) {
+  var bar = document.getElementById('stepBar' + stepEl);
+  if (!bar) return;
+  bar.innerHTML = '';
+  for (var i = 0; i < 4; i++) {
+    var d = document.createElement('div');
+    d.className = 'sdot' + (i < stepEl ? ' done' : i === stepEl ? ' active' : '');
+    bar.appendChild(d);
+  }
+  document.getElementById('hstep').textContent = '第 ' + (stepEl + 1) + ' 步，共 4 步';
+}
+
+function showStep(n) {
+  for (var i = 0; i < 4; i++) { var el = document.getElementById('step' + i); if (el) el.style.display = 'none'; }
+  var target = document.getElementById('step' + n);
+  if (target) target.style.display = 'block';
+  document.getElementById('successScreen').classList.remove('show');
+  currentStep = n;
+  renderBar(n);
+  if (n === 3) renderChecklist();
+  window.scrollTo(0, 0);
+}
+
+function go(n) { showStep(n); }
+
+var clDef = [
+  { label: '公司名称已填写', req: true, check: function() { return document.getElementById('f-company').value.trim(); } },
+  { label: '邮件地址已填写', req: true, check: function() { return document.getElementById('f-email').value.trim(); } },
+  { label: '市场所在地已确认', req: true, check: function() { return document.getElementById('f-market').value; } },
+  { label: '选款 / 大底分类已记录', req: true, check: function() { return document.getElementById('f-cats').value.trim(); } },
+  { label: '客户合照已拍摄', req: true, check: function() { return mediaPortrait.length > 0; } },
+  { label: '款式 / 样品照已上传', req: false, check: function() { return mediaStyle.length > 0; } },
+  { label: '采购能力已记录', req: false, check: function() { return document.getElementById('f-scale').value.trim(); } },
+  { label: '客户痛点已记录', req: false, check: function() { return document.getElementById('f-pain').value.trim(); } },
+  { label: '预计下单量已询问', req: false, check: function() { return document.getElementById('f-qty').value.trim(); } },
+];
+
+function renderChecklist() {
+  var el = document.getElementById('checklist');
+  el.innerHTML = '';
+  clDef.forEach(function(item) {
+    var ok = !!item.check();
+    var d = document.createElement('div');
+    d.className = 'cl-item' + (ok ? ' ok' : '');
+    d.innerHTML = '<div class="cl-circle' + (ok ? ' ok' : '') + '">' + (ok ? '✓' : '') + '</div>' +
+      '<span class="cl-text">' + item.label + '</span>' +
+      (item.req && !ok ? '<span class="cl-req">必填</span>' : '');
+    el.appendChild(d);
+  });
+}
+
+function addMedia(input, group) {
+  var arr = group === 'style' ? mediaStyle : mediaPortrait;
+  var gridId = group === 'style' ? 'grid-style' : 'grid-portrait';
+  Array.from(input.files).forEach(function(f) {
+    var idx = arr.length;
+    arr.push({ type: f.type.startsWith('video') ? 'vid' : 'img', name: f.name, dataUrl: null });
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      arr[idx].dataUrl = e.target.result;
+      renderGrid(gridId, arr);
+      if (currentStep === 3) renderChecklist();
+    };
+    reader.readAsDataURL(f);
+  });
+  input.value = '';
+}
+
+function renderGrid(gridId, arr) {
+  var g = document.getElementById(gridId);
+  g.innerHTML = '';
+  arr.forEach(function(m, idx) {
+    var w = document.createElement('div'); w.className = 'thumb';
+    if (m.type === 'img' && m.dataUrl) {
+      var img = document.createElement('img'); img.src = m.dataUrl; w.appendChild(img);
+    } else {
+      w.innerHTML = '<div class="vid-ph">🎥<span>视频</span></div>';
+    }
+    var del = document.createElement('button'); del.className = 'del'; del.textContent = '×';
+    del.onclick = (function(i, a, gid) { return function() { a.splice(i, 1); renderGrid(gid, a); if (currentStep === 3) renderChecklist(); }; })(idx, arr, gridId);
+    w.appendChild(del); g.appendChild(w);
+  });
+}
+
+function compressImage(dataUrl, maxW, quality, cb) {
+  var img = new Image();
+  img.onload = function() {
+    var canvas = document.createElement('canvas');
+    var scale = Math.min(1, maxW / img.width);
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    cb(canvas.toDataURL('image/jpeg', quality));
+  };
+  img.src = dataUrl;
+}
+
+function setStatus(msg, isError) {
+  var el = document.getElementById('uploadStatus');
+  el.style.display = 'block';
+  el.textContent = msg;
+  el.className = 'upload-status' + (isError ? ' error' : '');
+}
+
+function submitForm() {
+  var company = document.getElementById('f-company').value.trim();
+  var email = document.getElementById('f-email').value.trim();
+  var market = document.getElementById('f-market').value;
+  if (!company || !email || !market) { showToast('请先填写必填项'); go(0); return; }
+  if (!document.getElementById('f-cats').value.trim()) { showToast('请填写选款信息'); go(1); return; }
+
+  var sheetUrl = localStorage.getItem(SHEET_URL_KEY);
+  if (!sheetUrl) { showToast('请先配置 Google Sheets 链接'); return; }
+
+  var btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '正在同步...';
+  setStatus('📤 正在压缩图片并上传，请稍候...');
+
+  var allMedia = mediaStyle.concat(mediaPortrait.map(function(m) { return Object.assign({}, m, { group: 'portrait' }); }));
+  mediaStyle.forEach(function(m) { m.group = 'style'; });
+
+  var tasks = allMedia.filter(function(m) { return m.dataUrl && m.type === 'img'; });
+  var compressed = [];
+  var done = 0;
+
+  function afterCompress() {
+    var payload = {
+      action: 'addClient',
+      id: Date.now(),
+      exportedAt: new Date().toISOString(),
+      company: company,
+      name: document.getElementById('f-name').value.trim(),
+      jobTitle: document.getElementById('f-job').value.trim(),
+      market: market,
+      scale: document.getElementById('f-scale').value.trim(),
+      cats: document.getElementById('f-cats').value.trim(),
+      sample: document.getElementById('f-sample').value.trim(),
+      qty: document.getElementById('f-qty').value.trim(),
+      timeline: document.getElementById('f-timeline').value,
+      email: email,
+      phone: document.getElementById('f-phone').value.trim(),
+      social: document.getElementById('f-social').value.trim(),
+      pain: document.getElementById('f-pain').value.trim(),
+      note: document.getElementById('f-note').value.trim(),
+      styleImages: mediaStyle.map(function(m) { return m.compressed || m.dataUrl || ''; }),
+      portraitImages: mediaPortrait.map(function(m) { return m.compressed || m.dataUrl || ''; }),
+      status: '新客户'
+    };
+
+    setStatus('📡 正在写入 Google Sheets...');
+
+    fetch(sheetUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function() {
+      btn.disabled = false; btn.textContent = '✓ 提交并自动同步到汇总';
+      document.getElementById('uploadStatus').style.display = 'none';
+      document.getElementById('step3').style.display = 'none';
+      document.getElementById('successScreen').classList.add('show');
+      window.scrollTo(0, 0);
+    }).catch(function(err) {
+      btn.disabled = false; btn.textContent = '✓ 提交并自动同步到汇总';
+      setStatus('❌ 提交失败，请检查网络后重试：' + err.message, true);
+    });
+  }
+
+  if (tasks.length === 0) { afterCompress(); return; }
+  tasks.forEach(function(m) {
+    compressImage(m.dataUrl, 1200, 0.75, function(result) {
+      m.compressed = result;
+      done++;
+      if (done === tasks.length) afterCompress();
+    });
+  });
+}
+
+function resetAll() {
+  ['f-company','f-name','f-job','f-scale','f-cats','f-sample','f-qty','f-email','f-phone','f-social','f-pain','f-note'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('f-market').value = '';
+  document.getElementById('f-timeline').value = '';
+  mediaStyle = []; mediaPortrait = [];
+  renderGrid('grid-style', mediaStyle);
+  renderGrid('grid-portrait', mediaPortrait);
+  document.getElementById('successScreen').classList.remove('show');
+  document.getElementById('uploadStatus').style.display = 'none';
+  showStep(0);
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+init();
+</script>
+</body>
+</html>
