@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>展会客户汇总</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:#f0f0f0;color:#1a1a1a;min-height:100vh}
+.header{background:#1a1a1a;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px}
+.header-title{font-size:17px;font-weight:700;flex:1}
+.header-count{font-size:13px;color:#aaa}
+.container{max-width:960px;margin:0 auto;padding:20px 16px}
+
+/* Setup */
+.setup-card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;border:1px solid #e8e8e8}
+.setup-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.setup-sub{font-size:13px;color:#888;margin-bottom:16px;line-height:1.6}
+.setup-steps{counter-reset:step;margin-bottom:18px}
+.setup-step{counter-increment:step;font-size:13px;color:#555;margin-bottom:8px;padding-left:28px;position:relative;line-height:1.6}
+.setup-step::before{content:counter(step);position:absolute;left:0;top:0;width:20px;height:20px;background:#1a1a1a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;line-height:20px;text-align:center}
+.setup-step code{background:#f5f5f5;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+.setup-input-row{display:flex;gap:8px}
+.setup-input{flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;color:#1a1a1a}
+.setup-btn{padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.setup-btn:active{opacity:0.8}
+.setup-btn.secondary{background:#fff;color:#1a1a1a;border:1px solid #ccc}
+.sheet-btn{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;padding:9px 16px;background:#34A853;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.tbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font-size:13px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;cursor:pointer;font-family:inherit;font-weight:500}
+.tbtn:active{opacity:0.8}
+.tbtn.green{background:#1D9E75;color:#fff;border-color:#1D9E75}
+.toolbar-sep{flex:1}
+.search-box{padding:8px 12px;font-size:13px;border:1px solid #ddd;border-radius:8px;font-family:inherit;width:180px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.stat{background:#fff;border-radius:10px;padding:12px;text-align:center;border:1px solid #e8e8e8}
+.stat-n{font-size:24px;font-weight:700}
+.stat-l{font-size:11px;color:#888;margin-top:2px}
+
+/* Market pills */
+.mrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.mpill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555}
+.mpill.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+
+/* Table */
+.tbl-wrap{background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e8e8e8}
+.tbl-head{display:grid;grid-template-columns:180px 90px 1fr 130px 80px 80px 110px;background:#f8f8f8;border-bottom:1px solid #e8e8e8}
+.th{padding:10px 12px;font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.04em}
+.tbl-body{max-height:58vh;overflow-y:auto}
+.tr{display:grid;grid-template-columns:180px 90px 1fr 130px 80px 80px 110px;border-bottom:0.5px solid #f0f0f0;cursor:pointer}
+.tr:hover{background:#fafafa}
+.tr:last-child{border-bottom:none}
+.td{padding:12px;font-size:13px;display:flex;align-items:center;overflow:hidden}
+.td-name{font-weight:600;color:#1a1a1a}
+.td-sub{font-size:11px;color:#888;margin-top:1px}
+.td-muted{color:#888;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;display:block}
+.td-trunc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;width:100%}
+.spill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+.s0{background:#E6F1FB;color:#185FA5}.s1{background:#FAEEDA;color:#854F0B}.s2{background:#E1F5EE;color:#0F6E56}.s3{background:#EAF3DE;color:#3B6D11}
+.ssel{font-size:12px;padding:4px 6px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#1a1a1a;font-family:inherit;cursor:pointer;width:100%}
+.pbar{height:4px;background:#eee;border-radius:2px;overflow:hidden;width:56px}
+.pfill{height:100%;background:#1D9E75;border-radius:2px}
+.thumb-mini{width:28px;height:28px;border-radius:4px;object-fit:cover;border:1px solid #e0e0e0;margin-right:3px;flex-shrink:0}
+.empty{padding:60px 20px;text-align:center;color:#aaa;font-size:14px}
+.empty-icon{font-size:40px;display:block;margin-bottom:10px}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;overflow-y:auto;padding:20px 12px}
+.overlay.open{display:flex;align-items:flex-start;justify-content:center}
+.mbox{background:#fff;border-radius:16px;width:100%;max-width:680px;padding:24px;margin:auto}
+.mtop{display:flex;align-items:flex-start;gap:12px;margin-bottom:20px}
+.mavatar{width:48px;height:48px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#185FA5;flex-shrink:0}
+.mtitle{font-size:19px;font-weight:700;flex:1;padding-top:2px}
+.mclose{font-size:24px;background:none;border:none;cursor:pointer;color:#aaa;padding:0}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.df{background:#f8f8f8;border-radius:8px;padding:10px 12px}
+.df.full{grid-column:1/-1}
+.df-l{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px}
+.df-v{font-size:14px;color:#1a1a1a;line-height:1.5;word-break:break-all}
+.photo-section{margin-bottom:14px}
+.photo-label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.photo-item{aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid #e0e0e0;background:#f5f5f5;cursor:pointer}
+.photo-item img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-item .vid-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px}
+.no-photo{font-size:13px;color:#aaa;font-style:italic}
+.mfooter{display:flex;align-items:center;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #eee}
+.mfooter label{font-size:13px;color:#555;font-weight:500;white-space:nowrap}
+.msel{padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;flex:1}
+.mdel{margin-left:auto;padding:8px 14px;font-size:13px;border:1px solid #fcc;border-radius:8px;background:#fff;color:#E24B4A;cursor:pointer;font-family:inherit}
+
+/* Lightbox */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:300;align-items:center;justify-content:center}
+.lightbox.open{display:flex}
+.lightbox img{max-width:96vw;max-height:96vh;object-fit:contain;border-radius:4px}
+.lb-close{position:absolute;top:16px;right:20px;font-size:32px;color:#fff;cursor:pointer;background:none;border:none;line-height:1}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:#888;font-size:14px}
+.spin{display:inline-block;width:24px;height:24px;border:2px solid #ddd;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:11px 22px;border-radius:10px;font-size:14px;opacity:0;transition:opacity 0.25s;pointer-events:none;white-space:nowrap;z-index:999}
+.toast.show{opacity:1}
+
+@media(max-width:700px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+  .tbl-wrap{overflow-x:auto}
+  .tbl-head,.tr{grid-template-columns:150px 80px 1fr 100px 60px 60px 90px;min-width:600px}
+  .dg{grid-template-columns:1fr}
+  .df.full{grid-column:1}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-title">展会客户汇总</div>
+  <div class="header-count" id="hcount">— 位客户</div>
+</div>
+
+<div class="container">
+
+  <!-- Setup -->
+  <div class="setup-card" id="setupCard">
+    <div class="setup-title">⚙️ 一次性配置（负责人操作，约5分钟）</div>
+    <div class="setup-sub">配置完成后，员工提交的每条客户信息会实时出现在下方列表，无需手动传文件。</div>
+
+    <div class="setup-steps">
+      <div class="setup-step">打开 <a href="https://script.google.com" target="_blank" style="color:#1a6ef5">script.google.com</a>，点击「新建项目」</div>
+      <div class="setup-step">把下方的代码完整粘贴进去，替换掉默认的 <code>myFunction</code>，然后点保存</div>
+      <div class="setup-step">点击「部署」→「新建部署」→ 类型选「Web 应用」→ 执行身份选「我」→ 访问权限选「所有人」→ 点「部署」→ 复制生成的网址</div>
+      <div class="setup-step">把网址粘贴到下方输入框，点「保存并开始使用」。同时把这个网址发给所有员工填入他们的录入工具。</div>
+    </div>
+
+    <div style="background:#1a1a1a;border-radius:8px;padding:14px;margin-bottom:16px;overflow-x:auto">
+      <pre style="color:#a8ff78;font-size:11px;font-family:monospace;line-height:1.6;white-space:pre-wrap">function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var ss = SpreadsheetApp.openById('YOUR_SHEET_ID');
+    var sheet = ss.getSheetByName('客户数据') || ss.insertSheet('客户数据');
+
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['ID','提交时间','公司名称','联系人','职位','市场','采购能力/规模',
+        '邮件','WhatsApp/电话','社媒账号','选款/大底分类','打样要求',
+        '预计下单量','决策周期','客户痛点','样品图数量','合照数量','跟进状态','备注',
+        '样品图(base64)','合照(base64)']);
+    }
+
+    var styleImgs = (data.styleImages || []).join('|||');
+    var portraitImgs = (data.portraitImages || []).join('|||');
+
+    sheet.appendRow([
+      data.id, data.exportedAt, data.company, data.name, data.jobTitle,
+      data.market, data.scale, data.email, data.phone, data.social,
+      data.cats, data.sample, data.qty, data.timeline, data.pain,
+      (data.styleImages || []).length, (data.portraitImages || []).length,
+      data.status || '新客户', data.note, styleImgs, portraitImgs
+    ]);
+
+    return ContentService.createTextOutput(JSON.stringify({ok:true}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false,error:err.message}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  var ss = SpreadsheetApp.openById('YOUR_SHEET_ID');
+  var sheet = ss.getSheetByName('客户数据');
+  if (!sheet || sheet.getLastRow() <= 1) {
+    return ContentService.createTextOutput(JSON.stringify([]))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  var rows = sheet.getDataRange().getValues();
+  var headers = rows[0];
+  var result = [];
+  for (var i = 1; i < rows.length; i++) {
+    var obj = {};
+    headers.forEach(function(h, j) { obj[h] = rows[i][j]; });
+    result.push(obj);
+  }
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+    </div>
+    <div style="font-size:12px;color:#888;margin-bottom:4px">⚠️ 记得把代码里两处 <code style="background:#f0f0f0;padding:1px 5px;border-radius:3px">YOUR_SHEET_ID</code> 替换成你的 Google Sheets 文件 ID（URL 中 /d/ 和 /edit 之间的部分）</div>
+    <br>
+    <div class="setup-input-row">
+      <input class="setup-input" id="setupUrl" type="url" placeholder="粘贴部署后生成的 Web App 网址">
+      <button class="setup-btn" onclick="saveSetup()">保存并开始使用</button>
+    </div>
+    <div style="margin-top:10px">
+      <button class="setup-btn secondary" onclick="toggleSetup()">已配置，折叠说明</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div id="main" style="display:none">
+    <div class="toolbar">
+      <button class="tbtn green" onclick="loadData()">🔄 刷新数据</button>
+      <button class="tbtn" onclick="exportCSV()">📊 导出 CSV</button>
+      <button class="tbtn" onclick="exportAllPDF()">📄 导出全部 PDF</button>
+      <button class="tbtn" onclick="toggleSetup()">⚙️ 配置</button>
+      <div class="toolbar-sep"></div>
+      <input class="search-box" type="text" placeholder="搜索公司或联系人..." oninput="onSearch(this.value)">
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="mrow" id="mrow"></div>
+    <div class="tbl-wrap">
+      <div class="tbl-head">
+        <div class="th">公司</div><div class="th">市场</div><div class="th">选款</div>
+        <div class="th">联系方式</div><div class="th">进度</div><div class="th">照片</div>
+        <div class="th">跟进状态</div>
+      </div>
+      <div class="tbl-body" id="tblBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="mbox">
+    <div class="mtop">
+      <div class="mavatar" id="mavatar">?</div>
+      <div class="mtitle" id="mtitle">客户详情</div>
+      <button class="mclose" onclick="closeModal()">×</button>
+    </div>
+    <div id="mcontent"></div>
+    <div class="mfooter">
+      <label>跟进状态：</label>
+      <select class="msel" id="msel" onchange="updateModalStatus()">
+        <option>新客户</option><option>跟进中</option><option>打样阶段</option><option>已成交</option>
+      </select>
+      <button class="mdel" style="border-color:#aaa;color:#555;margin-left:8px" onclick="exportSinglePDF(modalIdx)">📄 导出PDF</button>
+      <button class="mdel" onclick="deleteClient()">删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lb-close" onclick="closeLightbox()">×</button>
+  <img id="lbImg" src="">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SETUP_KEY = 'tradeshow_manager_url';
+var clients = [];
+var filtered = [];
+var activeMarket = '全部';
+var searchQ = '';
+var modalIdx = -1;
+var statusList = ['新客户','跟进中','打样阶段','已成交'];
+var pillCls = ['s0','s1','s2','s3'];
+var setupVisible = true;
+
+function saveSetup() {
+  var url = document.getElementById('setupUrl').value.trim();
+  if (!url || !url.startsWith('http')) { showToast('请填入正确的链接'); return; }
+  localStorage.setItem(SETUP_KEY, url);
+  document.getElementById('setupCard').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  setupVisible = false;
+  loadData();
+  showToast('配置已保存，正在加载数据...');
+}
+
+function toggleSetup() {
+  setupVisible = !setupVisible;
+  document.getElementById('setupCard').style.display = setupVisible ? 'block' : 'none';
+}
+
+function init() {
+  var url = localStorage.getItem(SETUP_KEY);
+  if (url) {
+    document.getElementById('setupUrl').value = url;
+    document.getElementById('setupCard').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    setupVisible = false;
+    loadData();
+  }
+}
+
+function loadData() {
+  var url = localStorage.getItem(SETUP_KEY);
+  if (!url) { showToast('请先完成配置'); return; }
+  document.getElementById('tblBody').innerHTML = '<div class="loading"><div class="spin"></div><br>正在从 Google Sheets 加载...</div>';
+  fetch(url + '?action=getAll', { method: 'GET', mode: 'cors' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      clients = data.map(function(row, i) {
+        function s(v) { return (v === null || v === undefined || v === false) ? '' : String(v); }
+        var styleRaw = s(row['样品图(base64)']);
+        var portraitRaw = s(row['合照(base64)']);
+        var videoRaw = s(row['视频链接']);
+        var styleImgs = styleRaw ? styleRaw.split('|||').filter(Boolean) : [];
+        var portraitImgs = portraitRaw ? portraitRaw.split('|||').filter(Boolean) : [];
+        var videoLinks = videoRaw ? videoRaw.split('|||').filter(Boolean) : [];
+        return {
+          _rowIdx: i,
+          id: row['ID'],
+          exportedAt: s(row['提交时间']),
+          company: s(row['公司名称']),
+          name: s(row['联系人']),
+          jobTitle: s(row['职位']),
+          market: s(row['市场']),
+          scale: s(row['采购能力/规模']),
+          email: s(row['邮件']),
+          phone: s(row['WhatsApp/电话']),
+          social: s(row['社媒账号']),
+          cats: s(row['选款/大底分类']),
+          sample: s(row['打样要求']),
+          qty: s(row['预计下单量']),
+          timeline: s(row['决策周期']),
+          pain: s(row['客户痛点']),
+          note: s(row['备注']),
+          status: s(row['跟进状态']) || '新客户',
+          styleImages: styleImgs,
+          portraitImages: portraitImgs,
+          videoLinks: videoLinks,
+          styleCount: styleImgs.length,
+          portraitCount: portraitImgs.length,
+          videoCount: parseInt(s(row['视频数量'])) || videoLinks.length
+        };
+      });
+      document.getElementById('hcount').textContent = clients.length + ' 位客户';
+      refresh();
+      showToast('已加载 ' + clients.length + ' 位客户');
+    })
+    .catch(function(err) {
+      document.getElementById('tblBody').innerHTML = '<div class="empty"><span class="empty-icon">⚠️</span>加载失败，请检查配置链接<br><small style="color:#aaa">' + err.message + '</small></div>';
+    });
+}
+
+function refresh() { renderStats(); renderMarkets(); applyFilter(); }
+
+function renderStats() {
+  var sc = {}; statusList.forEach(function(s) { sc[s] = 0; });
+  clients.forEach(function(c) { if (sc[c.status] !== undefined) sc[c.status]++; });
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="stat-n">' + clients.length + '</div><div class="stat-l">总客户</div></div>' +
+    '<div class="stat"><div class="stat-n">' + sc['新客户'] + '</div><div class="stat-l">新客户</div></div>' +
+    '<div class="stat"><div class="stat-n">' + sc['跟进中'] + '</div><div class="stat-l">跟进中</div></div>' +
+    '<div class="stat"><div class="stat-n">' + sc['打样阶段'] + '</div><div class="stat-l">打样阶段</div></div>' +
+    '<div class="stat"><div class="stat-n">' + sc['已成交'] + '</div><div class="stat-l">已成交</div></div>';
+}
+
+function renderMarkets() {
+  var markets = {};
+  clients.forEach(function(c) { if (c.market) markets[c.market] = (markets[c.market] || 0) + 1; });
+  var row = document.getElementById('mrow'); row.innerHTML = '';
+  var all = document.createElement('button'); all.className = 'mpill' + (activeMarket === '全部' ? ' active' : '');
+  all.textContent = '全部 (' + clients.length + ')';
+  all.onclick = function() { activeMarket = '全部'; renderMarkets(); applyFilter(); }; row.appendChild(all);
+  Object.keys(markets).forEach(function(m) {
+    var b = document.createElement('button'); b.className = 'mpill' + (activeMarket === m ? ' active' : '');
+    b.textContent = m + ' (' + markets[m] + ')';
+    b.onclick = function() { activeMarket = m; renderMarkets(); applyFilter(); }; row.appendChild(b);
+  });
+}
+
+function onSearch(q) { searchQ = q.toLowerCase(); applyFilter(); }
+
+function applyFilter() {
+  filtered = clients.filter(function(c) {
+    var mOk = activeMarket === '全部' || c.market === activeMarket;
+    var sOk = !searchQ || (c.company || '').toLowerCase().includes(searchQ) || (c.name || '').toLowerCase().includes(searchQ) || (c.email || '').toLowerCase().includes(searchQ);
+    return mOk && sOk;
+  });
+  renderTable();
+}
+
+function renderTable() {
+  var body = document.getElementById('tblBody'); body.innerHTML = '';
+  if (!filtered.length) { body.innerHTML = '<div class="empty"><span class="empty-icon">🔍</span>没有匹配的记录</div>'; return; }
+  filtered.forEach(function(c) {
+    var si = statusList.indexOf(c.status); if (si < 0) si = 0;
+    var idx = clients.indexOf(c);
+    var tr = document.createElement('div'); tr.className = 'tr';
+    var photoHtml = '';
+    var firstPortrait = c.portraitImages && c.portraitImages[0];
+    var firstStyle = c.styleImages && c.styleImages[0];
+    if (firstPortrait) photoHtml += '<img class="thumb-mini" src="' + firstPortrait + '">';
+    if (firstStyle) photoHtml += '<img class="thumb-mini" src="' + firstStyle + '">';
+    if (!firstPortrait && !firstStyle) photoHtml = '<span style="font-size:11px;color:#ccc">无</span>';
+    var total = (c.styleCount || 0) + (c.portraitCount || 0);
+    tr.innerHTML =
+      '<div class="td"><div><div class="td-name">' + esc(c.company || '—') + '</div><div class="td-sub">' + esc(c.name || '') + '</div></div></div>' +
+      '<div class="td"><span class="td-muted">' + esc(c.market || '—') + '</span></div>' +
+      '<div class="td"><span class="td-trunc">' + esc((String(c.cats || '—')).substring(0, 36)) + '</span></div>' +
+      '<div class="td"><div><div class="td-muted">' + esc(c.email || '—') + '</div><div class="td-sub">' + esc(c.phone || '') + '</div></div></div>' +
+      '<div class="td"><div><div class="pbar"><div class="pfill" style="width:' + calcProg(c) + '%"></div></div><span style="font-size:11px;color:#888;margin-top:2px;display:block">' + calcProg(c) + '%</span></div></div>' +
+      '<div class="td" style="display:flex;align-items:center;gap:2px">' + photoHtml + (total > 2 ? '<span style="font-size:10px;color:#aaa">+' + (total - 2) + '</span>' : '') + '</div>' +
+      '<div class="td"><select class="ssel" onchange="updateStatus(' + idx + ',this.value)" onclick="event.stopPropagation()">' + statusList.map(function(s) { return '<option' + (c.status === s ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></div>';
+    tr.onclick = function() { openModal(idx); };
+    body.appendChild(tr);
+  });
+}
+
+function calcProg(c) {
+  var f = [c.company, c.email, c.market, c.cats, c.name, c.qty, c.pain, (c.styleCount || 0) > 0, (c.portraitCount || 0) > 0, c.scale];
+  return Math.round(f.filter(Boolean).length / f.length * 100);
+}
+
+function updateStatus(idx, val) { clients[idx].status = val; renderStats(); renderTable(); showToast('状态已更新'); }
+
+function openModal(idx) {
+  modalIdx = idx; var c = clients[idx];
+  var ini = (c.company || '?').substring(0, 2).toUpperCase();
+  document.getElementById('mavatar').textContent = ini;
+  document.getElementById('mtitle').textContent = c.company || '客户详情';
+  document.getElementById('msel').value = c.status || '新客户';
+
+  var portraitHtml = '';
+  if (c.portraitImages && c.portraitImages.length) {
+    portraitHtml = '<div class="photo-section"><div class="photo-label">客户合照</div><div class="photo-grid">' +
+      c.portraitImages.map(function(src, i) {
+        return src ? '<div class="photo-item" onclick="openLightbox(\'' + encodeURIComponent(src) + '\')"><img src="' + src + '"></div>' : '';
+      }).join('') + '</div></div>';
+  }
+  var styleHtml = '';
+  if (c.styleImages && c.styleImages.length) {
+    styleHtml = '<div class="photo-section"><div class="photo-label">款式 & 样品照</div><div class="photo-grid">' +
+      c.styleImages.map(function(src) {
+        return src ? '<div class="photo-item" onclick="openLightbox(\'' + encodeURIComponent(src) + '\')"><img src="' + src + '"></div>' : '';
+      }).join('') + '</div></div>';
+  }
+  var videoHtml = '';
+  if (c.videoLinks && c.videoLinks.length) {
+    videoHtml = '<div class="photo-section"><div class="photo-label">视频（' + c.videoLinks.length + ' 个）</div><div style="display:flex;flex-direction:column;gap:8px">' +
+      c.videoLinks.map(function(url, i) {
+        var previewUrl = url.replace('/preview', '').replace('https://drive.google.com/file/d/', '').split('/')[0];
+        var embedUrl = 'https://drive.google.com/file/d/' + previewUrl + '/preview';
+        return '<div style="border-radius:8px;overflow:hidden;border:1px solid #e0e0e0"><iframe src="' + embedUrl + '" width="100%" height="200" frameborder="0" allowfullscreen style="display:block"></iframe></div>';
+      }).join('') + '</div></div>';
+  } else if (c.videoCount > 0) {
+    videoHtml = '<div class="photo-section"><div class="photo-label">视频</div><div class="no-photo">共 ' + c.videoCount + ' 个视频，请在 Google Drive 中查看</div></div>';
+  }
+  if (!portraitHtml && !styleHtml && !videoHtml) {
+    portraitHtml = '<div class="photo-section"><div class="photo-label">照片</div><div class="no-photo">暂无照片</div></div>';
+  }
+
+  var fields = [
+    { l: '联系人', v: (c.name || '—') + (c.jobTitle ? ' · ' + c.jobTitle : '') },
+    { l: '市场所在地', v: c.market || '—' },
+    { l: '邮件', v: c.email || '—' },
+    { l: 'WhatsApp / 电话', v: c.phone || '—' },
+    { l: '社媒账号', v: c.social || '—' },
+    { l: '预计下单量', v: c.qty || '—' },
+    { l: '决策周期', v: c.timeline || '—' },
+    { l: '采购能力 / 规模', v: c.scale || '—', full: true },
+    { l: '选款 / 大底分类', v: c.cats || '—', full: true },
+    { l: '打样要求', v: c.sample || '—', full: true },
+    { l: '客户痛点 / 需求', v: c.pain || '—', full: true },
+    { l: '备注', v: c.note || '—', full: true },
+    { l: '录入时间', v: c.exportedAt ? new Date(c.exportedAt).toLocaleString('zh-CN') : '—' },
+    { l: '完整度', v: calcProg(c) + '%' },
+  ];
+
+  document.getElementById('mcontent').innerHTML =
+    portraitHtml + styleHtml + videoHtml +
+    '<div class="dg">' + fields.map(function(f) {
+      return '<div class="df' + (f.full ? ' full' : '') + '"><div class="df-l">' + f.l + '</div><div class="df-v">' + esc(f.v) + '</div></div>';
+    }).join('') + '</div>';
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('open'); modalIdx = -1; }
+function updateModalStatus() { if (modalIdx < 0) return; clients[modalIdx].status = document.getElementById('msel').value; refresh(); showToast('状态已更新'); }
+function deleteClient() {
+  if (modalIdx < 0) return;
+  if (!confirm('确定删除该客户记录吗？')) return;
+  var c = clients[modalIdx];
+  var url = localStorage.getItem(SETUP_KEY);
+  if (!url) { showToast('配置链接缺失'); return; }
+  fetch(url, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'deleteClient', id: c.id })
+  }).then(function() {
+    clients.splice(modalIdx, 1);
+    closeModal(); refresh(); showToast('已删除并同步');
+  }).catch(function() {
+    clients.splice(modalIdx, 1);
+    closeModal(); refresh(); showToast('本地已删除，请刷新确认');
+  });
+}
+
+function openLightbox(encodedSrc) {
+  document.getElementById('lbImg').src = decodeURIComponent(encodedSrc);
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lbImg').src = ''; }
+
+function exportCSV() {
+  if (!clients.length) { showToast('暂无数据'); return; }
+  var h = ['公司名称','联系人','职位','市场','采购能力/规模','邮件','WhatsApp/电话','社媒','选款/大底分类','打样要求','预计下单量','决策周期','客户痛点','样品图数','合照数','跟进状态','录入时间','备注'];
+  var rows = clients.map(function(c) {
+    return [c.company,c.name,c.jobTitle,c.market,c.scale,c.email,c.phone,c.social,c.cats,c.sample,c.qty,c.timeline,c.pain,c.styleCount,c.portraitCount,c.status,c.exportedAt?new Date(c.exportedAt).toLocaleString('zh-CN'):'',c.note].map(function(v) {
+      var s = String(v || '').replace(/"/g, '""');
+      return (s.indexOf(',') > -1 || s.indexOf('"') > -1 || s.indexOf('\n') > -1) ? '"' + s + '"' : s;
+    });
+  });
+  var csv = '\uFEFF' + [h].concat(rows).map(function(r) { return r.join(','); }).join('\n');
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = '展会客户_' + new Date().toLocaleDateString('zh-CN').replace(/\//g, '-') + '.csv'; a.click();
+  showToast('CSV 已导出');
+}
+
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function showToast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 2500); }
+
+document.getElementById('overlay').onclick = function(e) { if (e.target === this) closeModal(); };
+
+function buildClientHTML(c) {
+  var portraits = (c.portraitImages || []).filter(Boolean);
+  var styles = (c.styleImages || []).filter(Boolean);
+  var portraitSection = portraits.length ? '<div class="ps"><div class="pl">客户合照</div><div class="pg">' + portraits.map(function(src){ return '<img src="'+src+'">'; }).join('') + '</div></div>' : '';
+  var styleSection = styles.length ? '<div class="ps"><div class="pl">款式 & 样品照</div><div class="pg">' + styles.map(function(src){ return '<img src="'+src+'">'; }).join('') + '</div></div>' : '';
+  var si = ['新客户','跟进中','打样阶段','已成交'].indexOf(c.status); if(si<0)si=0;
+  var pillColors = [['#E6F1FB','#185FA5'],['#FAEEDA','#854F0B'],['#E1F5EE','#0F6E56'],['#EAF3DE','#3B6D11']];
+  var pc = pillColors[si];
+  var fields = [
+    ['公司名称', c.company],['联系人', c.name + (c.jobTitle?' · '+c.jobTitle:'')],
+    ['市场所在地', c.market],['邮件', c.email],
+    ['WhatsApp / 电话', c.phone],['社媒账号', c.social],
+    ['预计下单量', c.qty],['决策周期', c.timeline],
+  ];
+  var longFields = [
+    ['采购能力 / 规模', c.scale],['选款 / 大底分类', c.cats],
+    ['打样要求', c.sample],['客户痛点 / 需求', c.pain],['备注', c.note],
+  ];
+  return '<div class="client-page">'+
+    '<div class="cp-header">'+
+      '<div class="cp-avatar">'+(c.company||'?').substring(0,2).toUpperCase()+'</div>'+
+      '<div class="cp-info"><div class="cp-name">'+(c.company||'—')+'</div><div class="cp-sub">'+(c.market||'')+(c.name?' · '+c.name:'')+'</div></div>'+
+      '<div class="cp-pill" style="background:'+pc[0]+';color:'+pc[1]+'">'+c.status+'</div>'+
+    '</div>'+
+    portraitSection + styleSection +
+    '<div class="fg">'+fields.map(function(f){return f[1]?'<div class="ff"><div class="fl">'+f[0]+'</div><div class="fv">'+(f[1]||'—')+'</div></div>':'';}).join('')+'</div>'+
+    longFields.map(function(f){return f[1]?'<div class="ff full"><div class="fl">'+f[0]+'</div><div class="fv">'+(f[1]||'—')+'</div></div>':'';}).join('')+
+    '<div class="cp-time">录入时间：'+(c.exportedAt?new Date(c.exportedAt).toLocaleString('zh-CN'):'—')+'</div>'+
+  '</div>';
+}
+
+function getPDFStyles() {
+  return '<style>'+
+    'body{font-family:-apple-system,BlinkMacSystemFont,Helvetica Neue,Arial,sans-serif;margin:0;padding:0;color:#1a1a1a}'+
+    '.client-page{padding:28px 32px;page-break-after:always;max-width:720px;margin:0 auto}'+
+    '.client-page:last-child{page-break-after:auto}'+
+    '.cp-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #1a1a1a}'+
+    '.cp-avatar{width:52px;height:52px;border-radius:50%;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#185FA5;flex-shrink:0}'+
+    '.cp-name{font-size:20px;font-weight:700;margin-bottom:3px}'+
+    '.cp-sub{font-size:13px;color:#666}'+
+    '.cp-info{flex:1}'+
+    '.cp-pill{font-size:12px;padding:4px 12px;border-radius:20px;font-weight:600;white-space:nowrap}'+
+    '.ps{margin-bottom:16px}'+
+    '.pl{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}'+
+    '.pg{display:flex;flex-wrap:wrap;gap:8px}'+
+    '.pg img{width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0}'+
+    '.fg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}'+
+    '.ff{background:#f8f8f8;border-radius:7px;padding:9px 11px}'+
+    '.ff.full{grid-column:1/-1}'+
+    '.fl{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}'+
+    '.fv{font-size:13px;color:#1a1a1a;line-height:1.5;word-break:break-all}'+
+    '.cp-time{font-size:11px;color:#aaa;margin-top:12px;text-align:right}'+
+    '@media print{.client-page{padding:20px 24px}}'+
+  '</style>';
+}
+
+function exportSinglePDF(idx) {
+  if (idx < 0 || !clients[idx]) { showToast('请先打开客户档案'); return; }
+  var c = clients[idx];
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+esc(c.company)+'</title>'+getPDFStyles()+'</head><body>'+buildClientHTML(c)+'<script>window.onload=function(){window.print();}<\/script></body></html>';
+  var w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  showToast('PDF 打印窗口已打开');
+}
+
+function exportAllPDF() {
+  if (!clients.length) { showToast('暂无客户数据'); return; }
+  var list = filtered.length ? filtered : clients;
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>展会客户档案</title>'+getPDFStyles()+'</head><body>'+list.map(buildClientHTML).join('')+'<script>window.onload=function(){window.print();}<\/script></body></html>';
+  var w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  showToast('正在生成 '+list.length+' 份客户档案...');
+}
+
+init();
+</script>
+</body>
+</html>
